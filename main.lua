@@ -49,9 +49,9 @@ function love.load()
         dream = require("src.system.shader").dream,
         none = nil
     }
-    RPG.currentShaderName = "crt"
-    RPG.shader = RPG.shaders.crt
-    RPG.shader:send("screen_size", {RPG.WIDTH, RPG.HEIGHT})
+    RPG.currentShaderName = "none"
+    RPG.shader = nil
+    -- RPG.shader:send("screen_size", {RPG.WIDTH, RPG.HEIGHT})
 end
 
 function love.update(dt)

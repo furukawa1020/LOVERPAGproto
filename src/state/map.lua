@@ -10,6 +10,7 @@ local showDialog = false
 local currentDialog = {}
 local dialogIndex = 1
 local dialogTimer = 0
+local lightCanvas = nil
 
 function MapState.enter(params)
     print("Entered Map State")
@@ -45,12 +46,6 @@ function MapState.update(dt)
         
         if Input.wasPressed("return") then
             -- Check for NPC interaction
-            local targetX, targetY = Player.tileX, Player.tileY
-            -- Simple check: assume facing direction based on last move or just check neighbors?
-            -- For simplicity, let's check the tile in front of the player if we tracked direction,
-            -- but we didn't track direction explicitly in Player.lua yet.
-            -- Let's just check if any NPC is adjacent.
-            
             for _, npc in ipairs(npcs) do
                 local dx = math.abs(Player.tileX - npc.tileX)
                 local dy = math.abs(Player.tileY - npc.tileY)
@@ -97,11 +92,52 @@ function MapState.draw()
     
     -- Draw NPCs
     for _, npc in ipairs(npcs) do
-        love.graphics.print(currentDialog[dialogIndex], 100, RPG.HEIGHT - 150, 0, 2, 2)
+        NPC.draw(npc)
     end
     
-    -- Debug
-    -- love.graphics.print("Map State", 10, 10)
+    -- Draw Player
+    Player.draw()
+    
+    -- Lighting Effect
+    if not lightCanvas then
+        lightCanvas = love.graphics.newCanvas(RPG.WIDTH, RPG.HEIGHT)
+    end
+    
+    -- We need to draw the light canvas in screen space, so we detach camera temporarily or draw it after detach.
+    -- But the light circle needs to be at the player's screen position.
+    
+    Camera.detach()
+    
+    -- Draw Lighting to Canvas
+    love.graphics.setCanvas(lightCanvas)
+    love.graphics.clear(0, 0, 0, 0.95) -- Darkness
+    
+    love.graphics.setBlendMode("replace")
+    love.graphics.setColor(0, 0, 0, 0) -- Transparent
+    
+    -- Calculate Player Screen Position
+    local px = Player.x - Camera.x + Player.width/2
+    local py = Player.y - Camera.y + Player.height/2
+    
+    local lightRadius = 200 + math.sin(love.timer.getTime() * 2) * 10 -- Pulsing light
+    love.graphics.circle("fill", px, py, lightRadius)
+    
+    love.graphics.setBlendMode("alpha")
+    love.graphics.setCanvas(RPG.canvas) -- Return to main canvas
+    
+    -- Draw Light Overlay
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(lightCanvas, 0, 0)
+    
+    -- Draw UI (Dialog)
+    if showDialog then
+        love.graphics.setColor(0, 0, 0, 0.8)
+        love.graphics.rectangle("fill", 50, RPG.HEIGHT - 200, RPG.WIDTH - 100, 150)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", 50, RPG.HEIGHT - 200, RPG.WIDTH - 100, 150)
+        
+        love.graphics.print(currentDialog[dialogIndex], 100, RPG.HEIGHT - 150, 0, 2, 2)
+    end
 end
 
 function MapState.exit()
