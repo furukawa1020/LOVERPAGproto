@@ -11,6 +11,7 @@ RPG.TILE_SIZE = 64
 require("src.system.util")
 local Input = require("src.system.input")
 local Assets = require("src.system.assets")
+local Console = require("src.system.console") -- New Console Module
 
 -- States
 local TitleState = require("src.state.title")
@@ -61,6 +62,44 @@ function love.load()
     RPG.loveParticles:setEmissionRate(0)
 end
 
+function love.update(dt)
+    -- Console blocks game update? Maybe not, let it run in background.
+    if not Console.isOpen then
+        if RPG.currentState and RPG.currentState.update then
+            RPG.currentState.update(dt)
+        end
+        Input.update()
+    end
+    
+    local Audio = require("src.system.audio")
+    Audio.update(dt)
+    
+    -- Update Love Particles
+    if RPG.loveParticles then RPG.loveParticles:update(dt) end
+    
+    -- Cheat Code Trigger (Only if console closed)
+    if not Console.isOpen and Input.wasPressed("cheat_love") then
+        RPG.loveParticles:setPosition(RPG.WIDTH/2, RPG.HEIGHT/2)
+        RPG.loveParticles:emit(50)
+        Audio.playSFX("select")
+    end
+    
+    -- Shader Switching
+    if not Console.isOpen and Input.wasPressed("tab") then
+        if RPG.currentShaderName == "crt" then
+            RPG.currentShaderName = "dream"
+            RPG.shader = RPG.shaders.dream
+        elseif RPG.currentShaderName == "dream" then
+            RPG.currentShaderName = "none"
+            RPG.shader = nil
+        else
+            RPG.currentShaderName = "crt"
+            RPG.shader = RPG.shaders.crt
+            RPG.shader:send("screen_size", {RPG.WIDTH, RPG.HEIGHT})
+        end
+    end
+end
+
 function love.draw()
     -- Draw to Canvas
     love.graphics.setCanvas(RPG.canvas)
@@ -91,6 +130,10 @@ function love.draw()
     -- Debug FPS
     love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
     love.graphics.print("Shader: " .. RPG.currentShaderName .. " (Tab to switch)", 10, 30)
+    love.graphics.print("Console: Press ` (Backtick) or /", 10, 50)
+    
+    -- Draw Console
+    Console.draw()
 end
 
 function RPG.switchState(stateName, params)
@@ -110,5 +153,20 @@ function RPG.switchState(stateName, params)
 end
 
 function love.keypressed(key)
-    Input.keypressed(key)
+    if key == "`" or key == "/" then
+        Console.toggle()
+        return
+    end
+    
+    if Console.isOpen then
+        Console.keypressed(key)
+    else
+        Input.keypressed(key)
+    end
+end
+
+function love.textinput(t)
+    if Console.isOpen then
+        Console.textinput(t)
+    end
 end
