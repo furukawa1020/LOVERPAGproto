@@ -72,13 +72,16 @@ function MapState.update(dt)
     end
 end
 
-function MapState.draw()
+function MapState.draw(limit)
     Camera.attach()
     
     -- Draw Map
     local Assets = require("src.system.assets")
+    local drawnCount = 0
     for y = 0, MapData.height - 1 do
         for x = 0, MapData.width - 1 do
+            if limit and drawnCount >= limit then break end
+            
             local index = y * MapData.width + x + 1
             local tile = MapData.layers[1][index]
             
@@ -87,7 +90,9 @@ function MapState.draw()
             else
                 love.graphics.draw(Assets.textures.grass, x * MapData.tilewidth, y * MapData.tileheight)
             end
+            drawnCount = drawnCount + 1
         end
+        if limit and drawnCount >= limit then break end
     end
     
     -- Draw NPCs

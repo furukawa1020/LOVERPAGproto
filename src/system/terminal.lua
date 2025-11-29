@@ -69,6 +69,14 @@ function Terminal.update(dt)
             Terminal.installProgress = 1
             Terminal.finishInstall()
         end
+    elseif Terminal.state == "compiling_world" then
+        Terminal.compileProgress = Terminal.compileProgress + dt * 0.5 -- 2 seconds to compile
+        if Terminal.compileProgress >= 1 then
+            Terminal.compileProgress = 1
+            Terminal.state = "world_ready"
+            Terminal.print("World compilation complete.", Terminal.colors.highlight)
+            Terminal.print("Run 'make player' to spawn entity.", Terminal.colors.highlight)
+        end
     end
 end
 
@@ -161,8 +169,25 @@ function Terminal.execute(cmd)
         Terminal.startInstall()
     elseif command == "install" and parts[2] == "love" then
         Terminal.startInstall()
-    elseif command == "make" and parts[2] == "love" then
-        Terminal.startInstall()
+    elseif command == "make" then
+        if parts[2] == "love" then
+            Terminal.startInstall()
+        elseif parts[2] == "world" then
+            if Terminal.state == "installed" or Terminal.state == "active" then -- Allow if installed
+                 Terminal.startCompileWorld()
+            else
+                 Terminal.print("Error: System not ready or already compiled.", Terminal.colors.error)
+            end
+        elseif parts[2] == "player" then
+            if Terminal.state == "world_ready" then
+                Terminal.print("Spawning player entity... [OK]", Terminal.colors.highlight)
+                Terminal.state = "player_ready"
+            else
+                Terminal.print("Error: World not compiled yet. Run 'make world' first.", Terminal.colors.error)
+            end
+        else
+            Terminal.print("Usage: make <target> (world, player)", Terminal.colors.error)
+        end
     else
         Terminal.print(command .. ": command not found", Terminal.colors.error)
     end
@@ -177,20 +202,26 @@ function Terminal.startInstall()
     Terminal.print("Need to get 4,096 kB of archives.")
 end
 
+function Terminal.startCompileWorld()
+    Terminal.state = "compiling_world"
+    Terminal.compileProgress = 0
+    Terminal.print("Compiling world geometry...", Terminal.colors.highlight)
+end
+
 function Terminal.finishInstall()
     Terminal.state = "installed"
     Terminal.print("Love installed successfully.", Terminal.colors.highlight)
-    Terminal.print("Run 'love' to start.", Terminal.colors.highlight)
+    Terminal.print("Run 'make world' to build the environment.", Terminal.colors.highlight)
 end
 
 function Terminal.textinput(t)
-    if Terminal.state == "active" or Terminal.state == "installed" then
+    if Terminal.state == "active" or Terminal.state == "installed" or Terminal.state == "world_ready" or Terminal.state == "player_ready" then
         Terminal.currentLine = Terminal.currentLine .. t
     end
 end
 
 function Terminal.keypressed(key)
-    if Terminal.state ~= "active" and Terminal.state ~= "installed" then return end
+    if Terminal.state == "boot" or Terminal.state == "installing" or Terminal.state == "compiling_world" then return end
 
     if key == "backspace" then
         local byteoffset = utf8.offset(Terminal.currentLine, -1)
@@ -234,7 +265,7 @@ function Terminal.draw()
     end
     
     -- Draw Prompt
-    if Terminal.state == "active" or Terminal.state == "installed" then
+    if Terminal.state ~= "boot" and Terminal.state ~= "installing" and Terminal.state ~= "compiling_world" then
         local y = 10 + #Terminal.lines * lineHeight
         love.graphics.setColor(Terminal.colors.default)
         love.graphics.print(Terminal.prompt .. Terminal.currentLine, 10, y)
@@ -250,6 +281,12 @@ function Terminal.draw()
         local bar = "[" .. string.rep("#", progress) .. string.rep(" ", 20 - progress) .. "]"
         love.graphics.setColor(Terminal.colors.highlight)
         love.graphics.print("Unpacking: " .. bar .. " " .. math.floor(Terminal.installProgress * 100) .. "%", 10, y)
+    elseif Terminal.state == "compiling_world" then
+        local y = 10 + #Terminal.lines * lineHeight
+        local progress = math.floor(Terminal.compileProgress * 20)
+        local bar = "[" .. string.rep("#", progress) .. string.rep(" ", 20 - progress) .. "]"
+        love.graphics.setColor(Terminal.colors.highlight)
+        love.graphics.print("Compiling: " .. bar .. " " .. math.floor(Terminal.compileProgress * 100) .. "%", 10, y)
     end
 end
 
