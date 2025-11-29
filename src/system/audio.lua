@@ -57,6 +57,25 @@ function Audio.playBGM(name)
     end
 end
 
+function Audio.setReverb(enable)
+    if enable then
+        if not love.audio.getEffect("reverb") then
+            love.audio.setEffect("reverb", {
+                type = "reverb",
+                gain = 0.5,
+                decaytime = 1.5,
+                density = 1.0,
+            })
+        end
+        -- Apply to all active sources? 
+        -- For generated sources, we need to apply it when they are created or played.
+        -- Since we generate new sources constantly in update(), we should apply it there.
+        Audio.reverbEnabled = true
+    else
+        Audio.reverbEnabled = false
+    end
+end
+
 function Audio.update(dt)
     if not Audio.currentBGM then return end
     
@@ -73,6 +92,11 @@ function Audio.update(dt)
         -- Play note
         local note = generateWave("square", tempo * 0.8, freq)
         note:setVolume(0.2) -- Lower volume for BGM
+        
+        if Audio.reverbEnabled then
+            note:setEffect("reverb")
+        end
+        
         note:play()
         
         Audio.bgmNote = Audio.bgmNote + 1

@@ -20,6 +20,7 @@ function MapState.enter(params)
     
     local Audio = require("src.system.audio")
     Audio.playBGM("field")
+    Audio.setReverb(true)
     
     -- Initialize NPCs
     npcs = {}

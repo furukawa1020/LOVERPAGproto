@@ -27,6 +27,7 @@ function BattleState.enter()
     
     local Audio = require("src.system.audio")
     Audio.playBGM("battle")
+    Audio.setReverb(false)
     
     enemyAnim.yOffset = 0
     enemyAnim.xOffset = 0

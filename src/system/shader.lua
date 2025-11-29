@@ -25,4 +25,15 @@ Shader.crt = love.graphics.newShader[[
     }
 ]]
 
+Shader.dream = love.graphics.newShader[[
+    extern number time;
+    
+    vec4 position(mat4 transform_projection, vec4 vertex_position) {
+        // Wobble effect
+        vertex_position.x += sin(time * 2.0 + vertex_position.y * 0.05) * 10.0;
+        vertex_position.y += cos(time * 3.0 + vertex_position.x * 0.05) * 10.0;
+        return transform_projection * vertex_position;
+    }
+]]
+
 return Shader
