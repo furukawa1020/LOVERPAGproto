@@ -4,6 +4,8 @@
 RPG = {} -- Keep global namespace for compatibility if needed later
 RPG.WIDTH = 1280
 RPG.HEIGHT = 720
+RPG.TILE_SIZE = 64
+RPG.SCALE = 1
 
 local Terminal = require("src.system.terminal")
 local Shader = require("src.system.shader")
