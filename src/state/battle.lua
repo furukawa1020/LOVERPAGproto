@@ -10,6 +10,11 @@ local selection = 1
 local message = "Battle Start!"
 local timer = 0
 
+-- Animation vars
+local enemyAnim = {yOffset = 0, xOffset = 0}
+local animTimer = 0
+local screenShake = 0
+
 function BattleState.enter()
     print("Entered Battle State")
     playerStats.hp = 100
@@ -21,12 +26,28 @@ function BattleState.enter()
     
     local Audio = require("src.system.audio")
     Audio.playBGM("battle")
+    
+    enemyAnim.yOffset = 0
+    enemyAnim.xOffset = 0
+    animTimer = 0
+    screenShake = 0
 end
 
 function BattleState.update(dt)
     local Audio = require("src.system.audio")
     
+    -- Idle Animation (Bobbing)
+    animTimer = animTimer + dt
+    enemyAnim.yOffset = math.sin(animTimer * 5) * 5
+    
+    -- Screen Shake decay
+    if screenShake > 0 then
+        screenShake = screenShake - dt * 10
+        if screenShake < 0 then screenShake = 0 end
+    end
+    
     if turn == "PLAYER" then
+        enemyAnim.xOffset = 0 -- Reset position
         if Input.wasPressed("up") then
             Audio.playSFX("select")
             selection = selection - 1
@@ -85,20 +106,32 @@ function BattleState.update(dt)
         timer = timer - dt
         if timer <= 0 then
             turn = "ENEMY"
+            timer = 0.5 -- Attack animation duration
         end
     elseif turn == "ENEMY" then
-        -- Enemy Turn
-        Audio.playSFX("attack")
-        local damage = math.max(1, enemyStats.atk - playerStats.def + math.random(-2, 2))
-        playerStats.hp = playerStats.hp - damage
-        Audio.playSFX("hit")
-        message = enemyStats.name .. " attacks! " .. damage .. " damage."
-        
-        if playerStats.hp <= 0 then
-            playerStats.hp = 0
-            turn = "LOSE"
+        -- Enemy Turn Animation
+        timer = timer - dt
+        if timer > 0.25 then
+            -- Lunge forward
+            enemyAnim.xOffset = enemyAnim.xOffset - dt * 200
+        elseif timer > 0 then
+            -- Return
+            enemyAnim.xOffset = enemyAnim.xOffset + dt * 200
         else
-            turn = "PLAYER"
+            -- Deal Damage
+            Audio.playSFX("attack")
+            local damage = math.max(1, enemyStats.atk - playerStats.def + math.random(-2, 2))
+            playerStats.hp = playerStats.hp - damage
+            Audio.playSFX("hit")
+            message = enemyStats.name .. " attacks! " .. damage .. " damage."
+            screenShake = 10 -- Trigger shake
+            
+            if playerStats.hp <= 0 then
+                playerStats.hp = 0
+                turn = "LOSE"
+            else
+                turn = "PLAYER"
+            end
         end
     elseif turn == "WIN" then
         if Input.wasPressed("return") then
@@ -112,6 +145,17 @@ function BattleState.update(dt)
 end
 
 function BattleState.draw()
+    -- Screen Shake
+    local shakeX = 0
+    local shakeY = 0
+    if screenShake > 0 then
+        shakeX = math.random(-screenShake, screenShake)
+        shakeY = math.random(-screenShake, screenShake)
+    end
+    
+    love.graphics.push()
+    love.graphics.translate(shakeX, shakeY)
+
     -- Background
     love.graphics.setColor(0.1, 0.1, 0.2)
     love.graphics.rectangle("fill", 0, 0, RPG.WIDTH, RPG.HEIGHT)
@@ -119,7 +163,7 @@ function BattleState.draw()
     -- Enemy
     local Assets = require("src.system.assets")
     love.graphics.setColor(1, 1, 1)
-    love.graphics.draw(Assets.textures.slime, RPG.WIDTH/2 - 32, RPG.HEIGHT/2 - 64)
+    love.graphics.draw(Assets.textures.slime, RPG.WIDTH/2 - 32 + enemyAnim.xOffset, RPG.HEIGHT/2 - 64 + enemyAnim.yOffset)
     
     -- UI
     local fontScale = 2
@@ -145,6 +189,8 @@ function BattleState.draw()
     elseif turn == "LOSE" then
         love.graphics.print("YOU LOST... Press Enter.", RPG.WIDTH/2 - 150, RPG.HEIGHT/2 + 100, 0, fontScale, fontScale)
     end
+    
+    love.graphics.pop()
 end
 
 function BattleState.exit()
