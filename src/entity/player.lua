@@ -80,9 +80,9 @@ function Player.checkCollision(tx, ty, map)
 end
 
 function Player.draw()
-    love.graphics.setColor(0, 1, 0) -- Green player
-    love.graphics.rectangle("fill", Player.x, Player.y, Player.width, Player.height)
+    local Assets = require("src.system.assets")
     love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(Assets.textures.player, Player.x, Player.y)
 end
 
 return Player

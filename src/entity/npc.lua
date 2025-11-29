@@ -15,9 +15,9 @@ function NPC.new(x, y, dialog)
 end
 
 function NPC.draw(self)
-    love.graphics.setColor(self.color)
-    love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+    local Assets = require("src.system.assets")
     love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(Assets.textures.npc, self.x, self.y)
 end
 
 return NPC

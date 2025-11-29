@@ -24,6 +24,10 @@ function love.load()
     -- Generate Assets
     Assets.generate()
     
+    -- Initialize Audio
+    local Audio = require("src.system.audio")
+    Audio.init()
+    
     -- Initialize State Machine
     RPG.states = {
         title = TitleState,
@@ -44,6 +48,9 @@ function love.update(dt)
         RPG.currentState.update(dt)
     end
     Input.update()
+    
+    local Audio = require("src.system.audio")
+    Audio.update(dt)
 end
 
 function love.draw()

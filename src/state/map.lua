@@ -16,10 +16,15 @@ function MapState.enter()
     Player.init(2, 2)
     Camera.set(0, 0)
     
+    local Audio = require("src.system.audio")
+    Audio.playBGM("field")
+    
     -- Initialize NPCs
     npcs = {}
-    table.insert(npcs, NPC.new(5, 5, {"Hello, traveler!", "Welcome to Love2D RPG."}))
-    table.insert(npcs, NPC.new(10, 8, {"I am a red box.", "Very exciting."}))
+    table.insert(npcs, NPC.new(5, 5, {"Welcome to the Floating Isle.", "The void surrounds us all."}))
+    table.insert(npcs, NPC.new(10, 8, {"Have you seen the Slimes?", "They are weak to Fire."}))
+    table.insert(npcs, NPC.new(15, 12, {"The Demon Lord waits ahead.", "Prepare yourself."}))
+    table.insert(npcs, NPC.new(8, 15, {"This world is built of pixels.", "64 by 64, to be exact."}))
 end
 
 function MapState.update(dt)
@@ -73,18 +78,17 @@ function MapState.draw()
     Camera.attach()
     
     -- Draw Map
+    local Assets = require("src.system.assets")
     for y = 0, MapData.height - 1 do
         for x = 0, MapData.width - 1 do
             local index = y * MapData.width + x + 1
             local tile = MapData.layers[1][index]
             
             if tile == 1 then
-                love.graphics.setColor(0.5, 0.5, 0.5) -- Wall (Gray)
+                love.graphics.draw(Assets.textures.wall, x * MapData.tilewidth, y * MapData.tileheight)
             else
-                love.graphics.setColor(0.2, 0.2, 0.2) -- Floor (Dark Gray)
+                love.graphics.draw(Assets.textures.grass, x * MapData.tilewidth, y * MapData.tileheight)
             end
-            
-            love.graphics.rectangle("fill", x * MapData.tilewidth, y * MapData.tileheight, MapData.tilewidth, MapData.tileheight)
         end
     end
     
