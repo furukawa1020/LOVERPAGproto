@@ -45,30 +45,6 @@ function love.load()
     -- Canvas and Shader
     RPG.canvas = love.graphics.newCanvas(RPG.WIDTH, RPG.HEIGHT)
     RPG.shaders = {
-        crt = require("src.system.shader").crt,
-        dream = require("src.system.shader").dream,
-        none = nil
-    }
-    RPG.currentShaderName = "none"
-    RPG.shader = nil
-    -- RPG.shader:send("screen_size", {RPG.WIDTH, RPG.HEIGHT})
-end
-
-function love.update(dt)
-    if RPG.currentState and RPG.currentState.update then
-        RPG.currentState.update(dt)
-    end
-    Input.update()
-    
-    local Audio = require("src.system.audio")
-    Audio.update(dt)
-    
-    -- Shader Switching
-    if Input.wasPressed("tab") then
-        if RPG.currentShaderName == "crt" then
-            RPG.currentShaderName = "dream"
-            RPG.shader = RPG.shaders.dream
-        elseif RPG.currentShaderName == "dream" then
             RPG.currentShaderName = "none"
             RPG.shader = nil
         else
@@ -100,6 +76,11 @@ function love.draw()
     end
     love.graphics.draw(RPG.canvas, 0, 0)
     love.graphics.setShader()
+    
+    -- Draw Love Particles (Topmost)
+    if RPG.loveParticles then
+        love.graphics.draw(RPG.loveParticles, 0, 0)
+    end
     
     -- Debug FPS
     love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)

@@ -55,7 +55,27 @@ function Assets.generate()
             return 0, 0, 0, 1 -- Outline
         else
             return 0, 0, 0, 0 -- Transparent
+            -- Heart Texture
+    local heartData = love.image.newImageData(8, 8)
+    heartData:mapPixel(function(x, y)
+        -- Simple 8x8 heart shape
+        local heart = {
+            {0,1,1,0,0,1,1,0},
+            {1,1,1,1,1,1,1,1},
+            {1,1,1,1,1,1,1,1},
+            {1,1,1,1,1,1,1,1},
+            {0,1,1,1,1,1,1,0},
+            {0,0,1,1,1,1,0,0},
+            {0,0,0,1,1,0,0,0},
+            {0,0,0,0,0,0,0,0}
+        }
+        if heart[y+1] and heart[y+1][x+1] == 1 then
+            return 1, 0.4, 0.7, 1 -- Pinkish Red
         end
+        return 0, 0, 0, 0
+    end)
+    Assets.textures.heart = love.graphics.newImage(heartData)
+end
     end)
 
     -- NPC Sprite (64x64)
