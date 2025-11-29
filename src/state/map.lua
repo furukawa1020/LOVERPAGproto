@@ -31,6 +31,17 @@ function MapState.enter(params)
     table.insert(npcs, NPC.new(8, 15, {"This world is built of pixels.", "64 by 64, to be exact."}))
 end
 
+local Bug = require("src.entity.bug")
+local bugs = {}
+
+function MapState.spawnEnemies()
+    for i = 1, 5 do
+        local x = math.random(2, MapData.width - 2)
+        local y = math.random(2, MapData.height - 2)
+        table.insert(bugs, Bug.new(x, y))
+    end
+end
+
 function MapState.update(dt)
     if showDialog then
         if Input.wasPressed("return") then
@@ -43,6 +54,19 @@ function MapState.update(dt)
     else
         Player.update(dt, MapData)
         Camera.follow(Player.x + Player.width/2, Player.y + Player.height/2)
+        
+        -- Update Bugs
+        for _, bug in ipairs(bugs) do
+            Bug.update(bug, dt, Player)
+            -- Simple collision check for attack (Space key)
+            if Input.isDown("space") then
+                 local dx = Player.x - bug.x
+                 local dy = Player.y - bug.y
+                 if math.sqrt(dx*dx + dy*dy) < 64 then
+                     bug.isDead = true
+                 end
+            end
+        end
         
         if Input.wasPressed("return") then
             -- Check for NPC interaction
@@ -58,17 +82,9 @@ function MapState.update(dt)
             end
             
             if not showDialog then
-                 RPG.switchState("menu")
+                 -- RPG.switchState("menu") -- Disabled for now
             end
         end
-        
-        -- Random Encounter Check (when arriving at a tile)
-        if not Player.isMoving and Player.wasMoving then
-             if math.random() < 0.1 then -- 10% chance per tile
-                 RPG.switchState("battle")
-             end
-        end
-        Player.wasMoving = Player.isMoving
     end
 end
 
@@ -100,6 +116,11 @@ function MapState.draw(limit)
         NPC.draw(npc)
     end
     
+    -- Draw Bugs
+    for _, bug in ipairs(bugs) do
+        Bug.draw(bug)
+    end
+    
     -- Draw Player
     Player.draw()
     
@@ -107,9 +128,6 @@ function MapState.draw(limit)
     if not lightCanvas then
         lightCanvas = love.graphics.newCanvas(RPG.WIDTH, RPG.HEIGHT)
     end
-    
-    -- We need to draw the light canvas in screen space, so we detach camera temporarily or draw it after detach.
-    -- But the light circle needs to be at the player's screen position.
     
     Camera.detach()
     

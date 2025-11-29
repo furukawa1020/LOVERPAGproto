@@ -195,8 +195,16 @@ function Terminal.execute(cmd)
             else
                 Terminal.print("Error: World not compiled yet. Run 'make world' first.", Terminal.colors.error)
             end
+        elseif parts[2] == "enemies" then
+            if Terminal.state == "player_ready" then
+                Terminal.print("Warning: Spawning debug entities...", Terminal.colors.error)
+                local MapState = require("src.state.map")
+                MapState.spawnEnemies()
+            else
+                Terminal.print("Error: Player not ready.", Terminal.colors.error)
+            end
         else
-            Terminal.print("Usage: make <target> (world, player)", Terminal.colors.error)
+            Terminal.print("Usage: make <target> (world, player, enemies)", Terminal.colors.error)
         end
     else
         Terminal.print(command .. ": command not found", Terminal.colors.error)
