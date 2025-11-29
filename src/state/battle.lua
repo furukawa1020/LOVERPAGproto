@@ -78,7 +78,7 @@ function BattleState.update(dt)
                 turn = "ENEMY_WAIT"
                 timer = 1
             elseif battleMenu[selection] == "Run" then
-                RPG.switchState("map")
+                RPG.switchState("map", {fromBattle = true})
             end
         end
     elseif turn == "ENEMY_WAIT" then
@@ -102,7 +102,7 @@ function BattleState.update(dt)
         end
     elseif turn == "WIN" then
         if Input.wasPressed("return") then
-            RPG.switchState("map")
+            RPG.switchState("map", {fromBattle = true})
         end
     elseif turn == "LOSE" then
         if Input.wasPressed("return") then

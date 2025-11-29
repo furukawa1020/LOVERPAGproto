@@ -11,10 +11,12 @@ local currentDialog = {}
 local dialogIndex = 1
 local dialogTimer = 0
 
-function MapState.enter()
+function MapState.enter(params)
     print("Entered Map State")
-    Player.init(2, 2)
-    Camera.set(0, 0)
+    if not params or not params.fromBattle then
+        Player.init(2, 2)
+        Camera.set(0, 0)
+    end
     
     local Audio = require("src.system.audio")
     Audio.playBGM("field")
