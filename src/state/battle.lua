@@ -13,10 +13,125 @@ local timer = 0
 function BattleState.enter()
     print("Entered Battle State")
     playerStats.hp = 100
+    playerStats.mp = 20
     enemyStats.hp = 50
     turn = "PLAYER"
     selection = 1
     message = "Encountered " .. enemyStats.name .. "!"
+    
+    local Audio = require("src.system.audio")
+    Audio.playBGM("battle")
+end
+
+function BattleState.update(dt)
+    local Audio = require("src.system.audio")
+    
+    if turn == "PLAYER" then
+        if Input.wasPressed("up") then
+            Audio.playSFX("select")
+            selection = selection - 1
+            if selection < 1 then selection = #battleMenu end
+        elseif Input.wasPressed("down") then
+            Audio.playSFX("select")
+            selection = selection + 1
+            if selection > #battleMenu then selection = 1 end
+        elseif Input.wasPressed("return") then
+            Audio.playSFX("select")
+            if battleMenu[selection] == "Attack" then
+                -- Attack Logic
+                Audio.playSFX("attack")
+                local damage = math.max(1, playerStats.atk - enemyStats.def + math.random(-2, 2))
+                enemyStats.hp = enemyStats.hp - damage
+                message = "Player attacks! " .. damage .. " damage."
+                
+                if enemyStats.hp <= 0 then
+                    enemyStats.hp = 0
+                    turn = "WIN"
+                else
+                    turn = "ENEMY_WAIT"
+                    timer = 1
+                end
+            elseif battleMenu[selection] == "Skill" then
+                -- Fireball (Cost 5 MP)
+                if playerStats.mp >= 5 then
+                    playerStats.mp = playerStats.mp - 5
+                    Audio.playSFX("attack")
+                    local damage = 20 + math.random(-5, 5)
+                    enemyStats.hp = enemyStats.hp - damage
+                    message = "Player casts Fireball! " .. damage .. " damage."
+                    
+                    if enemyStats.hp <= 0 then
+                        enemyStats.hp = 0
+                        turn = "WIN"
+                    else
+                        turn = "ENEMY_WAIT"
+                        timer = 1
+                    end
+                else
+                    message = "Not enough MP!"
+                end
+            elseif battleMenu[selection] == "Item" then
+                -- Potion
+                Audio.playSFX("select")
+                playerStats.hp = math.min(playerStats.maxHp, playerStats.hp + 50)
+                message = "Player used Potion! Recovered 50 HP."
+                turn = "ENEMY_WAIT"
+                timer = 1
+            elseif battleMenu[selection] == "Run" then
+                RPG.switchState("map")
+            end
+        end
+    elseif turn == "ENEMY_WAIT" then
+        timer = timer - dt
+        if timer <= 0 then
+            turn = "ENEMY"
+        end
+    elseif turn == "ENEMY" then
+        -- Enemy Turn
+        Audio.playSFX("attack")
+        local damage = math.max(1, enemyStats.atk - playerStats.def + math.random(-2, 2))
+        playerStats.hp = playerStats.hp - damage
+        Audio.playSFX("hit")
+        message = enemyStats.name .. " attacks! " .. damage .. " damage."
+        
+        if playerStats.hp <= 0 then
+            playerStats.hp = 0
+            turn = "LOSE"
+        else
+            turn = "PLAYER"
+        end
+    elseif turn == "WIN" then
+        if Input.wasPressed("return") then
+            RPG.switchState("map")
+        end
+    elseif turn == "LOSE" then
+        if Input.wasPressed("return") then
+            RPG.switchState("title")
+        end
+    end
+end
+
+function BattleState.draw()
+    -- Background
+    love.graphics.setColor(0.1, 0.1, 0.2)
+    love.graphics.rectangle("fill", 0, 0, RPG.WIDTH, RPG.HEIGHT)
+    
+    -- Enemy
+    local Assets = require("src.system.assets")
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(Assets.textures.slime, RPG.WIDTH/2 - 32, RPG.HEIGHT/2 - 64)
+    
+    -- UI
+    local fontScale = 2
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print(enemyStats.name .. " HP: " .. enemyStats.hp .. "/" .. enemyStats.maxHp, 50, 50, 0, fontScale, fontScale)
+    love.graphics.print("Player HP: " .. playerStats.hp .. "/" .. playerStats.maxHp .. " MP: " .. playerStats.mp .. "/" .. playerStats.maxMp, 50, RPG.HEIGHT - 150, 0, fontScale, fontScale)
+    
+    -- Message
+    love.graphics.print(message, 50, 100, 0, fontScale, fontScale)
+    
+    -- Menu
+    if turn == "PLAYER" then
         love.graphics.rectangle("line", RPG.WIDTH - 300, RPG.HEIGHT - 300, 250, 250)
         for i, option in ipairs(battleMenu) do
             if i == selection then
