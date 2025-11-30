@@ -11,6 +11,8 @@ local Terminal = require("src.system.terminal")
 local Shader = require("src.system.shader")
 local MapState = require("src.state.map") -- Require MapState
 
+local BSOD = require("src.state.bsod")
+
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     
@@ -28,9 +30,21 @@ function love.load()
     RPG.canvas = love.graphics.newCanvas(RPG.WIDTH, RPG.HEIGHT)
     RPG.shader = Shader.crt
     RPG.shader:send("screen_size", {RPG.WIDTH, RPG.HEIGHT})
+    
+    RPG.state = "running" -- running, crashed
+end
+
+function RPG.crash()
+    RPG.state = "crashed"
+    BSOD.enter()
 end
 
 function love.update(dt)
+    if RPG.state == "crashed" then
+        BSOD.update(dt)
+        return
+    end
+
     Terminal.update(dt)
     
     -- Update Map/Player only if player is ready
@@ -40,6 +54,11 @@ function love.update(dt)
 end
 
 function love.draw()
+    if RPG.state == "crashed" then
+        BSOD.draw()
+        return
+    end
+
     -- Draw to Canvas
     love.graphics.setCanvas(RPG.canvas)
     love.graphics.clear(0, 0.05, 0, 1) -- Very dark green background
@@ -82,12 +101,18 @@ function love.draw()
 end
 
 function love.textinput(t)
+    if RPG.state == "crashed" then return end
     Terminal.textinput(t)
     local Audio = require("src.system.audio")
     Audio.playSynth("key")
 end
 
 function love.keypressed(key)
+    if RPG.state == "crashed" then
+        BSOD.keypressed(key)
+        return
+    end
+
     if key == "escape" then
         love.event.quit()
     end
